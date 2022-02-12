@@ -3,6 +3,7 @@ from tensorflow.keras import models, layers
 import matplotlib.pyplot as plt
 from IPython.display import HTML
 import numpy as np
+import os
 BATCH_SIZE = 32
 IMAGE_SIZE = 630
 CHANNELS=3
@@ -80,7 +81,7 @@ model = models.Sequential([
     layers.MaxPooling2D((2, 2)),
     layers.Flatten(),
     layers.Dense(64, activation='relu'),
-    layers.Dense(n_classes, activation='softmax'),
+    layers.Dense(1, activation='sigmoid'),
 ])
 
 model.build(input_shape=input_shape)
@@ -89,8 +90,8 @@ model.summary()
 
 model.compile(
     optimizer='adam',
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-    metrics=['accuracy']
+    loss=tf.keras.losses.BinaryCrossentropy(from_logits=False),
+    metrics=[tf.keras.metrics.BinaryAccuracy(),tf.keras.metrics.Precision(),tf.keras.metrics.Recall()]
 )
 
 history = model.fit(
@@ -100,41 +101,40 @@ history = model.fit(
     verbose=1,
     epochs=50,
 )
+model.save(f"saved_model_final_now_sampled")
 
+
+MODEL = tf.keras.models.load_model(f"saved_model_final_now_sampled")
 
 scores = model.evaluate(test_ds)
 
 print(scores)
 
 
-def predict(model, img):
-    img_array = tf.keras.preprocessing.image.img_to_array(images[i].numpy())
-    img_array = tf.expand_dims(img_array, 0)
+# def predict(model, img):
+#     img_array = tf.keras.preprocessing.image.img_to_array(images[i].numpy())
+#     img_array = tf.expand_dims(img_array, 0)
 
-    predictions = model.predict(img_array)
+#     predictions = model.predict(img_array)
 
-    predicted_class = class_names[np.argmax(predictions[0])]
-    confidence = round(100 * (np.max(predictions[0])), 2)
-    return predicted_class, confidence
+#     predicted_class = class_names[np.argmax(predictions[0])]
+#     confidence = round(100 * (np.max(predictions[0])), 2)
+#     return predicted_class, confidence
 
 
-plt.figure(figsize=(15, 15))
-for images, labels in test_ds.take(1):
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(images[i].numpy().astype("uint8"))
+# plt.figure(figsize=(15, 15))
+# for images, labels in test_ds.take(1):
+#     for i in range(9):
+#         ax = plt.subplot(3, 3, i + 1)
+#         plt.imshow(images[i].numpy().astype("uint8"))
         
-        predicted_class, confidence = predict(model, images[i].numpy())
-        actual_class = class_names[labels[i]] 
+#         predicted_class, confidence = predict(model, images[i].numpy())
+#         actual_class = class_names[labels[i]] 
         
-        plt.title(f"Actual: {actual_class},\n Predicted: {predicted_class}.\n Confidence: {confidence}%")
+#         plt.title(f"Actual: {actual_class},\n Predicted: {predicted_class}.\n Confidence: {confidence}%")
         
-        plt.axis("off")
+#         plt.axis("off")
 
 
-import os
-#model_version=max([int(i) for i in os.listdir("C:\\Users\\adeel\\OneDrive\\Documents\\model") + [0]])+1
-model.save(f"saved_model_final_now")
 
 
-MODEL = tf.keras.models.load_model(f"saved_model_final_now")
