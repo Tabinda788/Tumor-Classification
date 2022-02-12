@@ -20,8 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#path = "C:\\Users\\adeel\\OneDrive\\Documents\\api\\saved_model"
-MODEL = tf.keras.models.load_model(f"saved_model_final_now")
+MODEL = tf.keras.models.load_model(f"saved_model_new")
 
 CLASS_NAMES = ["no", "yes"]
 
@@ -37,18 +36,28 @@ def read_file_as_image(data) -> np.ndarray:
 @app.post("/predict")
 async def predict(
     file: UploadFile = File(...)
-):
-    image = read_file_as_image(await file.read())
-    img_batch = np.expand_dims(image, 0)
-    
-    predictions = MODEL.predict(img_batch)
+):  
+    try:
+        image = read_file_as_image(await file.read())
+        img_batch = np.expand_dims(image, 0)
+        predictions = MODEL.predict(img_batch)
+        predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
+        confidence = np.max(predictions[0])
+        if confidence>0.5:
+            predicted_class = "The image has a tumor"
+        else:
+            predicted_class = "The image has no tumor"
 
-    predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
-    confidence = np.max(predictions[0])
-    return {
-        'class': predicted_class,
-        'confidence': float(confidence)
-    }
+        return {
+            'class': predicted_class,
+            'confidence': float(confidence)
+        }
+
+    except:
+        return {
+            'Message': "Image not compatible",
+        }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host='localhost', port=8000)
