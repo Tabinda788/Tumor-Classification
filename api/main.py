@@ -55,7 +55,7 @@ async def predict(
 
     except:
         return {
-            'Message': "Image not compatible",
+            'Message': "Please try with some other image!!",
         }
 
 
